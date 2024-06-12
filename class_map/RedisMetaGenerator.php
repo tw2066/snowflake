@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hyperf\Snowflake\MetaGenerator;
 
-use Exception;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
@@ -16,6 +15,7 @@ use Hyperf\Redis\RedisProxy;
 use Hyperf\Snowflake\ConfigurationInterface;
 use Hyperf\Snowflake\MetaGenerator;
 use Redis;
+use RuntimeException;
 use Throwable;
 
 use function Hyperf\Support\make;
@@ -88,7 +88,7 @@ abstract class RedisMetaGenerator extends MetaGenerator
         $result = $redis->set($workerIdDataCenterIdKey, date('Y-m-d H:i:s'), ['NX', 'PX' => static::REDIS_EXPIRE * 1000]);
         if ($result === false) {
             if ($depth > 1024) {
-                throw new Exception('The value of workerId dataCenterId obtained exceeds 1024, please check your redis data');
+                throw new RuntimeException('The value of workerId dataCenterId obtained exceeds 1024, please check your redis data');
             }
             $this->setDataCenterIdAndWorkerId($key, $pool, $depth + 1);
         } else {
@@ -100,6 +100,10 @@ abstract class RedisMetaGenerator extends MetaGenerator
 
     private function heartbeat(string $workerIdDataCenterIdKey, string $pool): void
     {
+        if (! Coroutine::inCoroutine()) {
+            return;
+        }
+
         Coroutine::create(function () use ($workerIdDataCenterIdKey, $pool) {
             while (true) {
                 if (CoordinatorManager::until(Constants::WORKER_EXIT)->yield(5 * 60)) {
