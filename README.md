@@ -1,8 +1,8 @@
 # PHP hyperf snowflake
 
 
-- 对官方`hyperf/snowflake`组件功能增强，增加了`工作机器ID`的维护(redis增加心跳和判重)
-- 避免了某些情况下，不同进程的`工作机器ID`相同并产生重复ID
+- 对`hyperf/snowflake`组件功能增强，增强了`工作机器ID`的维护(增加了心跳检查和判重)
+- 避免不同进程`工作机器ID`相同的情况
 
 ## 安装
 
