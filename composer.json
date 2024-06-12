@@ -1,0 +1,41 @@
+{
+  "name": "tangwei/snowflake",
+  "description": "hyperf snowflake heartbeat",
+  "license": "MIT",
+  "keywords": [
+    "snowflake",
+    "snowflake heartbeat"
+  ],
+  "require": {
+    "php": ">=8.1",
+    "hyperf/snowflake": "~3.1.0"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.0",
+    "mockery/mockery": "^1.0",
+    "phpstan/phpstan": "^1.0",
+    "phpunit/phpunit": ">=7.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Tangwei\\Snowflake\\": "src/"
+    }
+  },
+  "extra": {
+    "hyperf": {
+      "config": "Tangwei\\Snowflake\\ConfigProvider"
+    },
+    "branch-alias": {
+      "dev-master": "0.1.x-dev"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  },
+  "scripts": {
+    "test": "phpunit -c phpunit.xml --colors=always",
+    "analyse": "phpstan analyse --memory-limit 1024M -l 0 ./src",
+    "cs-fix": "php-cs-fixer fix src && php-cs-fixer fix tests"
+  }
+}
