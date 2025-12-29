@@ -24,7 +24,7 @@ abstract class RedisMetaGenerator extends MetaGenerator
 {
     public const DEFAULT_REDIS_KEY = 'hyperf:snowflake:workerId';
 
-    public const REDIS_EXPIRE = 60 * 60;
+    public const REDIS_EXPIRE = 30 * 60;
 
     protected ?int $workerId = null;
 
@@ -106,7 +106,7 @@ abstract class RedisMetaGenerator extends MetaGenerator
 
         Coroutine::create(function () use ($workerIdDataCenterIdKey, $pool) {
             while (true) {
-                if (CoordinatorManager::until(Constants::WORKER_EXIT)->yield(5 * 60)) {
+                if (CoordinatorManager::until(Constants::WORKER_EXIT)->yield(4 * 60)) {
                     break;
                 }
                 try {
