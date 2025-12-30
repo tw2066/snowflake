@@ -81,7 +81,11 @@ abstract class RedisMetaGenerator extends MetaGenerator
         $dataCenterId = intval($id / $this->configuration->maxWorkerId()) % $this->configuration->maxDataCenterId();
 
         $workerIdDataCenterIdKey = sprintf('%s:%d_%d', $key, $workerId, $dataCenterId);
-        $result = $redis->set($workerIdDataCenterIdKey, date('Y-m-d H:i:s'), ['NX', 'PX' => static::REDIS_EXPIRE * 1000]);
+        $value = [
+            'appName' => $this->config->get('app_name'),
+            'createdAt' => date('Y-m-d H:i:s'),
+        ];
+        $result = $redis->set($workerIdDataCenterIdKey, json_encode($value), ['NX', 'PX' => static::REDIS_EXPIRE * 1000]);
         if ($result === false) {
             if ($depth > 1024) {
                 throw new RuntimeException('The value of workerId dataCenterId obtained exceeds 1024, please check your redis data');
@@ -109,7 +113,7 @@ abstract class RedisMetaGenerator extends MetaGenerator
                 }
                 try {
                     $redis = $this->getRedis($pool);
-                    $redis->set($workerIdDataCenterIdKey, date('Y-m-d H:i:s'), ['PX' => static::REDIS_EXPIRE * 1000]);
+                    $redis->expire($workerIdDataCenterIdKey, static::REDIS_EXPIRE);
                 } catch (Throwable $throwable) {
                     ApplicationContext::getContainer()?->get(StdoutLoggerInterface::class)?->error($throwable);
                 }
