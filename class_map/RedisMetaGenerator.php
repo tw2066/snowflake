@@ -23,7 +23,7 @@ abstract class RedisMetaGenerator extends MetaGenerator
 {
     public const DEFAULT_REDIS_KEY = 'hyperf:snowflake:workerId';
 
-    public const REDIS_EXPIRE = 30 * 60;
+    public const REDIS_EXPIRE = 60 * 60;
 
     protected ?int $workerId = null;
 
@@ -94,26 +94,26 @@ abstract class RedisMetaGenerator extends MetaGenerator
         } else {
             $this->workerId = $workerId;
             $this->dataCenterId = $dataCenterId;
-            $this->heartbeat($workerIdDataCenterIdKey, $pool);
+            $this->heartbeat($workerIdDataCenterIdKey, $pool, $value);
         }
     }
 
-    private function heartbeat(string $workerIdDataCenterIdKey, string $pool): void
+    private function heartbeat(string $workerIdDataCenterIdKey, string $pool, array $value): void
     {
         if (! Coroutine::inCoroutine()) {
             return;
         }
 
-        Coroutine::create(function () use ($workerIdDataCenterIdKey, $pool) {
+        Coroutine::create(function () use ($workerIdDataCenterIdKey, $pool, $value) {
             while (true) {
-                if (CoordinatorManager::until(Constants::WORKER_EXIT)->yield(4 * 60)) {
+                if (CoordinatorManager::until(Constants::WORKER_EXIT)->yield(5 * 60)) {
                     $redis = $this->getRedis($pool);
                     $redis->del($workerIdDataCenterIdKey);
                     break;
                 }
                 try {
                     $redis = $this->getRedis($pool);
-                    $redis->expire($workerIdDataCenterIdKey, static::REDIS_EXPIRE);
+                    $redis->set($workerIdDataCenterIdKey, json_encode($value), ['PX' => static::REDIS_EXPIRE * 1000]);
                 } catch (Throwable $throwable) {
                     ApplicationContext::getContainer()?->get(StdoutLoggerInterface::class)?->error($throwable);
                 }
