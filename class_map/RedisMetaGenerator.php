@@ -14,7 +14,6 @@ use Hyperf\Coroutine\Locker;
 use Hyperf\Redis\RedisProxy;
 use Hyperf\Snowflake\ConfigurationInterface;
 use Hyperf\Snowflake\MetaGenerator;
-use Redis;
 use RuntimeException;
 use Throwable;
 
@@ -74,10 +73,7 @@ abstract class RedisMetaGenerator extends MetaGenerator
 
     private function setDataCenterIdAndWorkerId(string $key, string $pool, int $depth = 0): void
     {
-        /** @var Redis $redis */
-        $redis = make(RedisProxy::class, [
-            'pool' => $pool,
-        ]);
+        $redis = $this->getRedis($pool);
 
         $id = $redis->incr($key);
 
@@ -107,18 +103,27 @@ abstract class RedisMetaGenerator extends MetaGenerator
         Coroutine::create(function () use ($workerIdDataCenterIdKey, $pool) {
             while (true) {
                 if (CoordinatorManager::until(Constants::WORKER_EXIT)->yield(4 * 60)) {
+                    $redis = $this->getRedis($pool);
+                    $redis->del($workerIdDataCenterIdKey);
                     break;
                 }
                 try {
-                    /** @var Redis $redis */
-                    $redis = make(RedisProxy::class, [
-                        'pool' => $pool,
-                    ]);
+                    $redis = $this->getRedis($pool);
                     $redis->set($workerIdDataCenterIdKey, date('Y-m-d H:i:s'), ['PX' => static::REDIS_EXPIRE * 1000]);
                 } catch (Throwable $throwable) {
                     ApplicationContext::getContainer()?->get(StdoutLoggerInterface::class)?->error($throwable);
                 }
             }
         });
+    }
+
+    private function getRedis(string $pool): RedisProxy
+    {
+        return make(
+            RedisProxy::class,
+            [
+                'pool' => $pool,
+            ]
+        );
     }
 }
